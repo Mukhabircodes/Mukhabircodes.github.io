@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://mukhabircodes.github.io/sitemap.xml

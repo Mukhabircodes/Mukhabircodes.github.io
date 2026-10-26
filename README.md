@@ -1,8 +1,8 @@
-# Portfolio — Otieno Erick Ouma
+# Mukhabircodes.github.io — Portfolio
 
 Single-page personal portfolio: Application Security and Backend Engineering. Plain HTML, CSS and a few lines of JavaScript. No build step.
 
-Live site (after Pages is enabled): https://mukhabircodes.github.io/portfolio/
+Live site: https://mukhabircodes.github.io/
 
 ## Run locally
 Open `index.html` in a browser, or run `python3 -m http.server 8000` and visit http://localhost:8000.
