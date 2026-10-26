@@ -180,6 +180,28 @@
   .stack .chip{ font-family: var(--mono); font-size: 11.5px; padding: 4px 9px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-mute); display: inline-flex; align-items: center; gap: 6px; }
   .stack .chip img{ width: 13px; height: 13px; }
 
+
+  /* Contact form */
+  .msg-card{ margin-top: 18px; padding: 22px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+  .msg-card h3{ font-family: var(--mono); font-size: 15px; color: var(--gold); }
+  .msg-card .sub{ font-size: 13px; color: var(--text-mute); margin: 4px 0 16px; }
+  .msg-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .msg-field{ display: flex; flex-direction: column; gap: 5px; }
+  .msg-field.full{ grid-column: 1 / -1; }
+  .msg-field label{ font-family: var(--mono); font-size: 11px; color: var(--text-mute); letter-spacing: .04em; }
+  .msg-field input, .msg-field textarea{ font: inherit; font-size: 14px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; width: 100%; }
+  .msg-field textarea{ min-height: 130px; resize: vertical; }
+  .msg-field input:focus, .msg-field textarea:focus{ outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217,164,65,.18); }
+  .msg-field .err{ font-size: 12px; color: #f87171; min-height: 0; }
+  .msg-field.bad input, .msg-field.bad textarea{ border-color: #f87171; }
+  .msg-hp{ position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .msg-actions{ display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+  .msg-btn{ font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--gold); color: #0a0e1a; border: 0; border-radius: 6px; padding: 11px 20px; cursor: pointer; }
+  .msg-btn:hover{ filter: brightness(1.08); }
+  .msg-btn:disabled{ opacity: .6; cursor: wait; }
+  .msg-status{ font-size: 13px; }
+  .msg-status.ok{ color: #34d399; } .msg-status.fail{ color: #f87171; }
+  @media (max-width: 640px){ .msg-grid{ grid-template-columns: 1fr; } }
   .bottom-row{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .b-card{ padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
   .b-card h3{ font-size: 14px; }
@@ -528,6 +550,19 @@
         </div>
 
       </div>
+
+      <form class="msg-card" id="contact-form" novalidate aria-labelledby="msg-title">
+        <h3 id="msg-title">SEND ME A MESSAGE</h3>
+        <p class="sub">Tell me about your project or opportunity. I reply by email.</p>
+        <div class="msg-grid">
+          <div class="msg-field"><label for="cf-name">NAME</label><input id="cf-name" name="name" autocomplete="name" maxlength="100" required><span class="err" aria-live="polite"></span></div>
+          <div class="msg-field"><label for="cf-email">EMAIL</label><input id="cf-email" name="email" type="email" autocomplete="email" maxlength="150" required><span class="err" aria-live="polite"></span></div>
+          <div class="msg-field full"><label for="cf-subject">SUBJECT</label><input id="cf-subject" name="subject" maxlength="150"></div>
+          <div class="msg-field full"><label for="cf-msg">MESSAGE</label><textarea id="cf-msg" name="message" maxlength="3000" required></textarea><span class="err" aria-live="polite"></span></div>
+          <div class="msg-hp" aria-hidden="true"><label>Leave empty <input name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+        </div>
+        <div class="msg-actions"><button class="msg-btn" type="submit">Send message</button><span class="msg-status" id="cf-status" role="status" aria-live="polite"></span></div>
+      </form>
     </section>
 
     <footer>
@@ -609,6 +644,47 @@
     var hh = Math.floor(s/3600), mm = Math.floor((s%3600)/60), ss = s%60;
     uptimeEl.textContent = 'session — ' + pad(hh) + ':' + pad(mm) + ':' + pad(ss);
   }, 1000);
+
+  /* Contact form: posts to Formspree. Falls back to the visitor's mail app until a form ID is set. */
+  var FORMSPREE_ID = 'YOUR_FORM_ID';
+  var CONTACT_EMAIL = 'oumaerick049@gmail.com';
+  var form = document.getElementById('contact-form');
+  if(form){
+    var status = document.getElementById('cf-status');
+    var btn = form.querySelector('.msg-btn');
+    function setErr(input, msg){
+      var f = input.closest('.msg-field'); f.classList.toggle('bad', !!msg);
+      var e = f.querySelector('.err'); if(e) e.textContent = msg || '';
+    }
+    function validate(){
+      var n = form.elements.name, em = form.elements.email, m = form.elements.message, ok = true;
+      setErr(n, n.value.trim() ? '' : 'Please enter your name.'); if(!n.value.trim()) ok = false;
+      var good = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim());
+      setErr(em, good ? '' : 'Enter a valid email address.'); if(!good) ok = false;
+      var long = m.value.trim().length >= 10;
+      setErr(m, long ? '' : 'Please write at least 10 characters.'); if(!long) ok = false;
+      return ok;
+    }
+    form.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      status.className = 'msg-status'; status.textContent = '';
+      if(!validate()) return;
+      if(form.elements._gotcha.value) return; /* bot */
+      var data = { name: form.elements.name.value.trim(), email: form.elements.email.value.trim(),
+        subject: form.elements.subject.value.trim() || 'Portfolio enquiry', message: form.elements.message.value.trim() };
+      if(FORMSPREE_ID === 'YOUR_FORM_ID'){
+        location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(data.subject) +
+          '&body=' + encodeURIComponent(data.message + '\n\n' + data.name + ' <' + data.email + '>');
+        status.className = 'msg-status ok'; status.textContent = 'Opening your email app...';
+        return;
+      }
+      btn.disabled = true; status.textContent = 'Sending...';
+      fetch('https://formspree.io/f/' + FORMSPREE_ID, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) })
+        .then(function(r){ if(!r.ok) throw new Error(r.status); status.className = 'msg-status ok'; status.textContent = 'Thanks! Your message was sent. I will reply soon.'; form.reset(); })
+        .catch(function(){ status.className = 'msg-status fail'; status.textContent = 'Could not send. Please email ' + CONTACT_EMAIL + ' directly.'; })
+        .then(function(){ btn.disabled = false; });
+    });
+  }
 })();
 </script>
 
